@@ -1,0 +1,10 @@
+Machine Learning
+
+Machine learning involves giving computers the capacity to learn, develop, and p
+erform increasingly complex tasks on their own. This ability has applications in
+ a wide array of fields, including health care, finance, consumer technology, ed
+ucation, resources, and government. Machine Learning Engineers create algorithms
+ for self-driving cars, foreign language translation, retrieving and processing 
+data from social networks, and processing and reviewing customer data. In our Ma
+chine Learning Engineer Nanodegree, you develop a skillset that you can apply to
+ a wide variety of careers.
