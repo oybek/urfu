@@ -1,15 +1,15 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <string>
 #include <cstring>
+#include <string>
 #include "base64.h"
 
 int main( int argc, char** argv )
 {
 	if( argc != 4 || strcmp( argv[1], "to64" ) && strcmp( argv[1], "from64" ) )
 	{
-		fprintf( stderr, "Usage: %s <to64|from64> <fname> <converted file>\n", argv[0] );
+		fprintf( stderr, "Usage: %s \n", argv[0] );
 		exit(1);
 	}
 
@@ -24,25 +24,24 @@ int main( int argc, char** argv )
 		pFile = fopen( argv[2], "rb" );
 		if( pFile == NULL ) { fputs("File error", stderr); exit (1); }
 
-		// Определяем размер файла
+		// РћРїСЂРµРґРµР»СЏРµРј СЂР°Р·РјРµСЂ С„Р°Р№Р»Р°
 		fseek (pFile , 0 , SEEK_END);
 		lSize = ftell (pFile);
 		rewind (pFile);
 
-		// Выделяем память для загрузки файла
+		// Р’С‹РґРµР»СЏРµРј РїР°РјСЏС‚СЊ РґР»СЏ Р·Р°РіСЂСѓР·РєРё С„Р°Р№Р»Р°
 		buffer = (unsigned char*) malloc (sizeof(unsigned char)*lSize);
 		if( buffer == NULL ) { fputs("Memory error",stderr); exit (2); }
 
-		// Копируем файл в память
+		// РљРѕРїРёСЂСѓРµРј С„Р°Р№Р» РІ РїР°РјСЏС‚СЊ
 		result = fread (buffer,1,lSize,pFile);
 		if (result != lSize) { fputs("Reading error",stderr); exit (3); }
 
-		// Файл считан в буффер - преобразовываем в base64
+		// Р¤Р°Р№Р» СЃС‡РёС‚Р°РЅ РІ Р±СѓС„С„РµСЂ - РїСЂРµРѕР±СЂР°Р·РѕРІС‹РІР°РµРј РІ base64
 		std::string encoded_str = base64_encode( buffer, lSize );
 
 		oFile = fopen( argv[3], "w" );
-		if( oFile == NULL ) { fputs("File error", stderr); exit (1); }
-
+		if( pFile == NULL ) { fputs("File error", stderr); exit (1); }
 		fprintf( oFile, "%s", encoded_str.c_str() );
 
 		// terminate
@@ -55,12 +54,12 @@ int main( int argc, char** argv )
 		pFile = fopen( argv[2], "r" );
 		if( pFile == NULL ) { fputs("File error", stderr); exit (1); }
 
-		// Резервируем 1Mb памяти
+		// Р РµР·РµСЂРІРёСЂСѓРµРј 1Mb РїР°РјСЏС‚Рё
 		std::string str; str.reserve(1024*1024);
 		char c;
 		while( (c = fgetc(pFile)) != EOF )
 		{
-			str.push_back(c);
+		str.push_back(c);
 		}
 
 		std::string decoded_str = base64_decode( str );

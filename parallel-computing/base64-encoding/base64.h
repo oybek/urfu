@@ -1,4 +1,6 @@
 
+
+#include <omp.h>
 #include <iostream>
 
 static const std::string base64_chars = 
@@ -16,46 +18,48 @@ static inline bool is_base64(unsigned char c)
 std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len) 
 {
   std::string result;
+  result.resize( in_len/3*4 );
+
   int i = 0;
-  int j = 0;
-  unsigned char char_array_3[3];
-  unsigned char char_array_4[4];
 
-  for( ; in_len--; )
+  // Распараллеливание преобразований
+#pragma omp parallel for shared(bytes_to_encode) private(i)
+  for( i = 0; i <= in_len-3; i += 3 )
   {
-    char_array_3[i++] = *(bytes_to_encode++);
-    if (i == 3) 
-    {
-      char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-      char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-      char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-      char_array_4[3] = char_array_3[2] & 0x3f;
+    unsigned char char_0 = bytes_to_encode[i];
+    unsigned char char_1 = bytes_to_encode[i+1];
+    unsigned char char_2 = bytes_to_encode[i+2];
 
-      for(i = 0; (i <4) ; i++)
-        result += base64_chars[char_array_4[i]];
-      i = 0;
-    }
+    int j = i*4/3;
+
+    result[j+0] = base64_chars[ (char_0 & 0xfc) >> 2 ];
+    result[j+1] = base64_chars[ ((char_0 & 0x03) << 4) + ((char_1 & 0xf0) >> 4) ];
+    result[j+2] = base64_chars[ ((char_1 & 0x0f) << 2) + ((char_2 & 0xc0) >> 6) ];
+    result[j+3] = base64_chars[ char_2 & 0x3f ];
   }
 
-  if (i)
+  if( in_len%3 == 1 )
   {
-    for(j = i; j < 3; j++)
-      char_array_3[j] = '\0';
+    int last = in_len - in_len%3;
+    unsigned char char_0 = bytes_to_encode[ last ];
+    result.push_back( base64_chars[ (char_0 & 0xfc) >> 2 ] );
+    result.push_back( base64_chars[ ((char_0 & 0x03) << 4) ] );
+    result.push_back( '=' );
+    result.push_back( '=' );
+  } else
+  if( in_len%3 == 2 )
+  {
+    int last = in_len - in_len%3;
+    unsigned char char_0 = bytes_to_encode[ last ];
+    unsigned char char_1 = bytes_to_encode[ last+1 ];
 
-    char_array_4[0] = ( char_array_3[0] & 0xfc) >> 2;
-    char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-    char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-
-    for (j = 0; (j < i + 1); j++)
-      result += base64_chars[char_array_4[j]];
-
-    while((i++ < 3))
-      result += '=';
-
+    result.push_back( base64_chars[ (char_0 & 0xfc) >> 2 ] );
+    result.push_back( base64_chars[ ((char_0 & 0x03) << 4) + ((char_1 & 0xf0) >> 4) ] );
+    result.push_back( base64_chars[ (char_1 & 0x0f) << 2 ] );
+    result.push_back( '=' );
   }
 
   return result;
-
 }
 
 std::string base64_decode(std::string const& encoded_string) 
