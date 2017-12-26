@@ -1,45 +1,78 @@
 
-#include <string>
 #include <cstdio>
-#include <fstream>
-#include <iostream>
+#include <cstdlib>
+#include <string>
+#include <cstring>
 #include "base64.h"
 
-// Максимальный размер файла в байтах, 20 Mb
-#define MAX_FILE_SIZE 1024*1024
-
-int main()
+int main( int argc, char** argv )
 {
-	char fname[256];
-
-	printf("Введите имя файла для преобразования его в base64: ");
-	scanf("%s", fname);
-
-	FILE* file;
-	int n;
-	unsigned char buffer[MAX_FILE_SIZE];
-
-	file = fopen(fname, "rb");
-	if( file )
+	if( argc != 4 || strcmp( argv[1], "to64" ) && strcmp( argv[1], "from64" ) )
 	{
-		n = fread(buffer, MAX_FILE_SIZE, 1, file);
-	}
-	else
-	{
-		printf("Ошибка: Не возможно открыть файл %s для чтения\n", fname);
+		fprintf( stderr, "Usage: %s <to64|from64> <fname> <converted file>\n", argv[0] );
+		exit(1);
 	}
 
-	std::string encoded_str = base64_encode( buffer, n );
+	FILE* pFile;
+	FILE* oFile;
+	long lSize;
+	unsigned char* buffer;
+	size_t result;
 
-	std::string encoded_fname = std::string(fname)+".txt";
-	FILE* fout = fopen( encoded_fname.c_str(), "w" );
-	if( fout )
+	if( strcmp( argv[1], "to64" ) == 0 )
 	{
-		std::cout << encoded_str << std::endl;
+		pFile = fopen( argv[2], "rb" );
+		if( pFile == NULL ) { fputs("File error", stderr); exit (1); }
+
+		// Определяем размер файла
+		fseek (pFile , 0 , SEEK_END);
+		lSize = ftell (pFile);
+		rewind (pFile);
+
+		// Выделяем память для загрузки файла
+		buffer = (unsigned char*) malloc (sizeof(unsigned char)*lSize);
+		if( buffer == NULL ) { fputs("Memory error",stderr); exit (2); }
+
+		// Копируем файл в память
+		result = fread (buffer,1,lSize,pFile);
+		if (result != lSize) { fputs("Reading error",stderr); exit (3); }
+
+		// Файл считан в буффер - преобразовываем в base64
+		std::string encoded_str = base64_encode( buffer, lSize );
+
+		oFile = fopen( argv[3], "w" );
+		if( oFile == NULL ) { fputs("File error", stderr); exit (1); }
+
+		fprintf( oFile, "%s", encoded_str.c_str() );
+
+		// terminate
+		fclose( oFile );
+		fclose( pFile );
+		free( buffer );
 	}
-	else
+	else if( strcmp( argv[1], "from64" ) == 0 )
 	{
-		printf("Ошибка: Не возможно открыть файл %s для чтения\n", encoded_fname.c_str() );
+		pFile = fopen( argv[2], "r" );
+		if( pFile == NULL ) { fputs("File error", stderr); exit (1); }
+
+		// Резервируем 1Mb памяти
+		std::string str; str.reserve(1024*1024);
+		char c;
+		while( (c = fgetc(pFile)) != EOF )
+		{
+			str.push_back(c);
+		}
+
+		std::string decoded_str = base64_decode( str );
+		oFile = fopen( argv[3], "wb" );
+		if( oFile == NULL ) { fputs("File error", stderr); exit (1); }
+
+		const char* buffer = decoded_str.c_str();
+		fwrite( buffer, sizeof(unsigned char), decoded_str.size(), oFile );
+
+		// terminate
+		fclose( pFile );
+		fclose( oFile );
 	}
 
 	return 0;

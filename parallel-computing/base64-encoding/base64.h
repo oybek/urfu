@@ -21,7 +21,7 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
   unsigned char char_array_3[3];
   unsigned char char_array_4[4];
 
-  while (in_len--) 
+  for( ; in_len--; )
   {
     char_array_3[i++] = *(bytes_to_encode++);
     if (i == 3) 
